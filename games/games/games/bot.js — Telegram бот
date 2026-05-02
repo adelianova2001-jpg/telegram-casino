@@ -1,0 +1,55 @@
+require('dotenv').config();
+const TelegramBot = require('node-telegram-bot-api');
+const db = require('./db');
+
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+
+bot.onText(/\/start/, (msg) => {
+  const user = db.getUser(msg.from.id, msg.from.username || msg.from.first_name);
+  bot.sendMessage(msg.chat.id, 
+    `🎰 Добро пожаловать в Casino!\n\n` +
+    `💰 Ваш баланс: ${user.balance} монет\n\n` +
+    `Нажмите кнопку ниже, чтобы играть:`,
+    {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🎮 Играть', web_app: { url: process.env.WEBAPP_URL } }
+        ], [
+          { text: '💰 Баланс', callback_data: 'balance' },
+          { text: '🏆 Топ', callback_data: 'top' }
+        ]]
+      }
+    }
+  );
+});
+
+bot.on('callback_query', (query) => {
+  if (query.data === 'balance') {
+    const user = db.getUser(query.from.id);
+    bot.answerCallbackQuery(query.id, { text: `💰 Баланс: ${user.balance} монет` });
+  }
+  if (query.data === 'top') {
+    const top = db.getTop(5);
+    const text = '🏆 Топ игроков:\n\n' + 
+      top.map((u,i) => `${i+1}. ${u.username} — ${u.balance} 🪙`).join('\n');
+    bot.sendMessage(query.message.chat.id, text);
+    bot.answerCallbackQuery(query.id);
+  }
+});
+
+bot.onText(/\/help/, (msg) => {
+  bot.sendMessage(msg.chat.id, 
+    `🎰 Команды:\n\n` +
+    `/start - начать игру\n` +
+    `/balance - баланс\n` +
+    `/top - топ игроков\n\n` +
+    `⚠️ Виртуальная валюта, без реальных денег`
+  );
+});
+
+bot.onText(/\/balance/, (msg) => {
+  const user = db.getUser(msg.from.id);
+  bot.sendMessage(msg.chat.id, `💰 Ваш баланс: ${user.balance} монет`);
+});
+
+console.log('Bot started');
