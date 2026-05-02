@@ -1,0 +1,20 @@
+const crypto = require('crypto');
+
+function roll(bet, prediction) {
+  // prediction: 'over' или 'under', target: 1-99
+  const roll = crypto.randomInt(1, 101); // 1-100
+  const target = prediction.target;
+  let win = 0;
+
+  if (prediction.type === 'over' && roll > target) {
+    const multiplier = +(98 / (100 - target)).toFixed(2);
+    win = Math.floor(bet * multiplier);
+  } else if (prediction.type === 'under' && roll < target) {
+    const multiplier = +(98 / (target - 1)).toFixed(2);
+    win = Math.floor(bet * multiplier);
+  }
+
+  return { roll, win };
+}
+
+module.exports = { roll };
