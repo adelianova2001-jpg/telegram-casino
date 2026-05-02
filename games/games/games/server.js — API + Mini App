@@ -1,0 +1,108 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const crypto = require('crypto');
+const db = require('./db');
+const slot = require('./games/slot');
+const roulette = require('./games/roulette');
+const dice = require('./games/dice');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// Проверка Telegram initData
+function verifyTelegramData(initData) {
+  const params = new URLSearchParams(initData);
+  const hash = params.get('hash');
+  params.delete('hash');
+  const dataCheckString = [...params.entries()]
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([k,v]) => `${k}=${v}`)
+    .join('\n');
+  const secretKey = crypto.createHmac('sha256', 'WebAppData')
+    .update(process.env.BOT_TOKEN).digest();
+  const calcHash = crypto.createHmac('sha256', secretKey)
+    .update(dataCheckString).digest('hex');
+  if (calcHash !== hash) return null;
+  return JSON.parse(params.get('user'));
+}
+
+function auth(req, res, next) {
+  const initData = req.headers['x-telegram-init-data'];
+  if (!initData) return res.status(401).json({ error: 'No auth' });
+  const user = verifyTelegramData(initData);
+  if (!user) return res.status(401).json({ error: 'Invalid auth' });
+  req.user = user;
+  next();
+}
+
+// Получить данные пользователя
+app.get('/api/me', auth, (req, res) => {
+  const user = db.getUser(req.user.id, req.user.username || req.user.first_name);
+  res.json(user);
+});
+
+// Бонус раз в день
+app.post('/api/bonus', auth, (req, res) => {
+  const user = db.getUser(req.user.id);
+  // Простой бонус, если баланс < 100
+  if (user.balance < 100) {
+    db.updateBalance(user.id, 500);
+    return res.json({ success: true, amount: 500 });
+  }
+  res.json({ success: false, message: 'Бонус доступен только при балансе < 100' });
+});
+
+// Слот
+app.post('/api/slot/spin', auth, (req, res) => {
+  const { bet } = req.body;
+  const user = db.getUser(req.user.id);
+  if (bet < 1 || bet > user.balance) return res.status(400).json({ error: 'Invalid bet' });
+
+  const result = slot.spin(bet);
+  const delta = result.win - bet;
+  db.updateBalance(user.id, delta);
+  db.addHistory(user.id, 'slot', bet, result.win, result);
+
+  res.json({ ...result, balance: user.balance + delta });
+});
+
+// Рулетка
+app.post('/api/roulette/spin', auth, (req, res) => {
+  const { bet, betType, betValue } = req.body;
+  const user = db.getUser(req.user.id);
+  if (bet < 1 || bet > user.balance) return res.status(400).json({ error: 'Invalid bet' });
+
+  const result = roulette.spin(bet, betType, betValue);
+  const delta = result.win - bet;
+  db.updateBalance(user.id, delta);
+  db.addHistory(user.id, 'roulette', bet, result.win, result);
+
+  res.json({ ...result, balance: user.balance + delta });
+});
+
+// Кубики
+app.post('/api/dice/roll', auth, (req, res) => {
+  const { bet, type, target } = req.body;
+  const user = db.getUser(req.user.id);
+  if (bet < 1 || bet > user.balance) return res.status(400).json({ error: 'Invalid bet' });
+  if (target < 2 || target > 98) return res.status(400).json({ error: 'Invalid target' });
+
+  const result = dice.roll(bet, { type, target });
+  const delta = result.win - bet;
+  db.updateBalance(user.id, delta);
+  db.addHistory(user.id, 'dice', bet, result.win, result);
+
+  res.json({ ...result, balance: user.balance + delta });
+});
+
+// Топ игроков
+app.get('/api/top', (req, res) => {
+  res.json(db.getTop(10));
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on port ${process.env.PORT}`);
+});
