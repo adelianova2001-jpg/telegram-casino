@@ -1,0 +1,53 @@
+const Database = require('better-sqlite3');
+const db = new Database('casino.db');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    username TEXT,
+    balance INTEGER DEFAULT 1000,
+    total_bets INTEGER DEFAULT 0,
+    total_wins INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    game TEXT,
+    bet INTEGER,
+    win INTEGER,
+    result TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+module.exports = {
+  getUser(id, username = '') {
+    let user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    if (!user) {
+      db.prepare('INSERT INTO users (id, username) VALUES (?, ?)').run(id, username);
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    }
+    return user;
+  },
+
+  updateBalance(id, amount) {
+    db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(amount, id);
+  },
+
+  setBalance(id, balance) {
+    db.prepare('UPDATE users SET balance = ? WHERE id = ?').run(balance, id);
+  },
+
+  addHistory(userId, game, bet, win, result) {
+    db.prepare('INSERT INTO history (user_id, game, bet, win, result) VALUES (?,?,?,?,?)')
+      .run(userId, game, bet, win, JSON.stringify(result));
+    db.prepare('UPDATE users SET total_bets = total_bets + 1, total_wins = total_wins + ? WHERE id = ?')
+      .run(win > bet ? 1 : 0, userId);
+  },
+
+  getTop(limit = 10) {
+    return db.prepare('SELECT username, balance FROM users ORDER BY balance DESC LIMIT ?').all(limit);
+  }
+};
