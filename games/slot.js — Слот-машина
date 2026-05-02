@@ -1,0 +1,36 @@
+const crypto = require('crypto');
+
+// Барабаны (вероятности через повторения)
+const REELS = [
+  ['🍒','🍋','🍊','🍇','🔔','⭐','💎','7️⃣','🍒','🍋','🍊','🍇','🔔','🍒','🍋'],
+  ['🍋','🍒','🍇','🍊','⭐','🔔','7️⃣','💎','🍋','🍒','🍇','🍊','🔔','🍋','🍒'],
+  ['🍊','🍇','🍒','🍋','💎','7️⃣','⭐','🔔','🍊','🍇','🍒','🍋','⭐','🍊','🍇']
+];
+
+// Выплаты за 3 одинаковых
+const PAYOUTS = {
+  '🍒': 3, '🍋': 4, '🍊': 5, '🍇': 8,
+  '🔔': 15, '⭐': 25, '💎': 50, '7️⃣': 100
+};
+
+function randomIndex(max) {
+  return crypto.randomInt(0, max);
+}
+
+function spin(bet) {
+  const result = REELS.map(reel => reel[randomIndex(reel.length)]);
+  let win = 0;
+
+  // 3 одинаковых
+  if (result[0] === result[1] && result[1] === result[2]) {
+    win = bet * PAYOUTS[result[0]];
+  }
+  // 2 вишни в начале
+  else if (result[0] === '🍒' && result[1] === '🍒') {
+    win = bet * 2;
+  }
+
+  return { reels: result, win };
+}
+
+module.exports = { spin };
