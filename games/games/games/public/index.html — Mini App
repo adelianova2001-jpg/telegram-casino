@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casino</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="balance">💰 <span id="balance">0</span></div>
+    <button id="bonusBtn" class="bonus-btn">🎁 Бонус</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="slot">🎰 Слот</button>
+    <button class="tab" data-tab="roulette">🎡 Рулетка</button>
+    <button class="tab" data-tab="dice">🎲 Кубики</button>
+  </div>
+
+  <!-- СЛОТ -->
+  <div id="slot" class="game active">
+    <div class="slot-machine">
+      <div class="reels">
+        <div class="reel" id="reel1">❓</div>
+        <div class="reel" id="reel2">❓</div>
+        <div class="reel" id="reel3">❓</div>
+      </div>
+      <div class="result" id="slotResult"></div>
+    </div>
+    <div class="controls">
+      <label>Ставка: <input type="number" id="slotBet" value="10" min="1"></label>
+      <button id="slotSpin" class="spin-btn">SPIN 🎰</button>
+    </div>
+    <div class="paytable">
+      <h3>Выплаты (×ставка):</h3>
+      <div>7️⃣7️⃣7️⃣ ×100 | 💎💎💎 ×50 | ⭐⭐⭐ ×25</div>
+      <div>🔔🔔🔔 ×15 | 🍇🍇🍇 ×8 | 🍊🍊🍊 ×5</div>
+      <div>🍋🍋🍋 ×4 | 🍒🍒🍒 ×3 | 🍒🍒_ ×2</div>
+    </div>
+  </div>
+
+  <!-- РУЛЕТКА -->
+  <div id="roulette" class="game">
+    <div class="roulette-display">
+      <div class="roulette-number" id="rouletteNum">-</div>
+      <div class="result" id="rouletteResult"></div>
+    </div>
+    <div class="controls">
+      <label>Ставка: <input type="number" id="rouletteBet" value="10" min="1"></label>
+    </div>
+    <div class="bet-grid">
+      <button data-type="red" class="bet-btn red">🔴 Красное ×2</button>
+      <button data-type="black" class="bet-btn black">⚫ Чёрное ×2</button>
+      <button data-type="even" class="bet-btn">Чётное ×2</button>
+      <button data-type="odd" class="bet-btn">Нечётное ×2</button>
+      <button data-type="low" class="bet-btn">1-18 ×2</button>
+      <button data-type="high" class="bet-btn">19-36 ×2</button>
+    </div>
+    <div class="number-bet">
+      <input type="number" id="rouletteNumber" min="0" max="36" placeholder="0-36">
+      <button id="rouletteNumBtn" class="bet-btn">Число ×36</button>
+    </div>
+  </div>
+
+  <!-- КУБИКИ -->
+  <div id="dice" class="game">
+    <div class="dice-display">
+      <div class="dice-roll" id="diceRoll">-</div>
+      <div class="result" id="diceResult"></div>
+    </div>
+    <div class="controls">
+      <label>Ставка: <input type="number" id="diceBet" value="10" min="1"></label>
+      <label>Число (2-98): <input type="number" id="diceTarget" value="50" min="2" max="98"></label>
+      <div class="multiplier" id="diceMultiplier">Множитель: ×1.96</div>
+      <div class="dice-buttons">
+        <button id="diceUnder" class="bet-btn">⬇ Меньше</button>
+        <button id="diceOver" class="bet-btn">⬆ Больше</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
